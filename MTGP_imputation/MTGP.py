@@ -98,9 +98,9 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
     length = prod(dim)
 
     mse_top = np.array(1000000.)
-    if mode == 'Inner':
+    if mode == 'uniform':
         nk = prod(dim)
-        print("Inner")
+        print("uniform")
 
         residual = int(nk % r2)
         sho = int(nk / r2)
@@ -115,9 +115,9 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
         stock = []
         for i in range(int(r2)):
             stock.append(x[group[i]])
-    elif mode == 'inner_fiber':
+    elif mode == 'fiber':
         nk = dim[0]*dim[1]
-        print("Inner_fiber")
+        print("fiber")
 
         residual = int(nk % r2)
         sho = int(nk / r2)
@@ -153,15 +153,15 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
             print(p)
             ndp = copy.deepcopy(nd_l)
 
-            if mode == 'Inner':
+            if mode == 'uniform':
                 u = stock[p]
                 vectenx = ndp.reshape(length, order='F')
                 vectenx[u] = np.nan
                 nd3 = vectenx.reshape(dim, order='F')
 
-            elif mode == 'Inner_fiber':
+            elif mode == 'fiber':
                 u = stock[p]
-                vectenx = nd3.reshape([dim[0]*dim[1],dim[2]], order='F')
+                vectenx = ndp.reshape([dim[0]*dim[1],dim[2]], order='F')
                 vectenx[u,:] = np.nan
                 nd3 = vectenx.reshape(dim, order='F')
 
@@ -207,7 +207,7 @@ def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
     :param name: Name of result-folder :str
     :param kerngeno: Kernel function for SNPs marker matrix
     :param genomat: SNPs marker matrix: N_G * Markers nd-array matrix
-    :param mode: How to make missing data for cross validation (CV). "Inner" or "Inner-fiber"
+    :param mode: How to make missing data for cross validation (CV). "uniform" or "fiber"
     :param r2: Replication number of CV :int
     :param parameter_kouho: python dictionary object which has indexes "    'gpara_kouho', 'mparag_kouho','pars_kouho','sig2_kouho'. Each index have list of values for cross validation.
 

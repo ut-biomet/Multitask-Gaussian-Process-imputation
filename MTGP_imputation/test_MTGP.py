@@ -19,22 +19,23 @@ ntrait = [Dir_trait + "/" + filenames[i] for i in [0] + range(2, len(filenames))
 tendata = mt.make_tensor_data(ntrait)
 
 ##
-miss_rate = 0.5
+miss_rate = 0.1
 length = tendata.shape[0] * tendata.shape[1] * tendata.shape[2]
 pos = np.random.permutation(range(length))[0:int(length * miss_rate)]
 tenvec_miss = tendata.reshape(length, order="F")
 tenvec_miss[pos] = np.nan
 tendata_miss = np.reshape(tenvec_miss, tendata.shape, order="F")
 
-nd, kern, kerngeno, genomat, mode, r2 = tendata_miss, mkk.Gauss_kernel, mkk.median_RBF_kernel, genos, "Inner", 3
-parameter_kouho = {
-    'gpara_kouho': [2],
+nd, kern, kerngeno, genomat, mode, r2 = tendata_miss, mkk.Gauss_kernel, mkk.median_RBF_kernel, genos, "fiber", 3
+parameter_kouho = { #Candidates for parameters
+    'gpara_kouho': [2], #Corresponds to patameter "m"
     'mparag_kouho': [i * 0.1 for i in range(1, 9)],
     'pars_kouho': [0.01, 0.1, 1, 10],
     'sig2_kouho': [0.01, 0.1, 1, 10]
 }
 
 MTGP1 = MG.MTGP_impute(nd, kern, kerngeno, genomat, mode, r2, parameter_kouho)
+
 
 from matplotlib import pyplot as plt
 plt.plot(tendata[np.isnan(tendata_miss)],MTGP1['est'][np.isnan(tendata_miss)],'o')
