@@ -1,11 +1,14 @@
-# 2016/06/18 Trial of MTGP in MTGP_imputation directory #
+# 2016/07/18 Trial of MTGP in MTGP_imputation directory #
+# This is a demonstration code for MUGP imputation.
+# If you want to see the result of imputation, "matplotlib" library is required.
 
 import pandas as pd
-import mktensor as mt
-import mkkernel as mkk
-import MTGP as MG
+from MTGP_imputation import mktensor as mt
+from MTGP_imputation import mkkernel as mkk
+from MTGP_imputation import MTGP as MG
 import os
 import numpy as np
+import sys
 
 Dir_name = "tests"
 Dir_trait="tests/traits"
@@ -28,14 +31,18 @@ tendata_miss = np.reshape(tenvec_miss, tendata.shape, order="F")
 
 nd, kern, kerngeno, genomat, mode, r2 = tendata_miss, mkk.Gauss_kernel, mkk.median_RBF_kernel, genos, "fiber", 3
 parameter_kouho = { #Candidates for parameters
-    'gpara_kouho': [2], #Corresponds to patameter "m"
-    'mparag_kouho': [i * 0.1 for i in range(1, 9)],
-    'pars_kouho': [0.01, 0.1, 1, 10],
-    'sig2_kouho': [0.01, 0.1, 1, 10]
+    'gpara_candidate': [2], #Corresponds to patameter "m"
+    'mparag_candidate': [i * 0.1 for i in range(1, 9)], #Corresponds to patameter "rho"
+    'pars_candidate': [0.01, 0.1, 1, 10], #Corresponds to patameter "lambda"
+    'sig2_candidate': [0.01, 0.1, 1, 10] #Corresponds to patameter "sigma^2"
 }
 
 MTGP1 = MG.MTGP_impute(nd, kern, kerngeno, genomat, mode, r2, parameter_kouho)
 
+try:
+    from matplotlib import pyplot as plt
+    plt.plot(tendata[np.isnan(tendata_miss)],MTGP1['est'][np.isnan(tendata_miss)],'o')
+except ImportError:
+    sys.exit('could not load matplotlib library')
 
-from matplotlib import pyplot as plt
-plt.plot(tendata[np.isnan(tendata_miss)],MTGP1['est'][np.isnan(tendata_miss)],'o')
+

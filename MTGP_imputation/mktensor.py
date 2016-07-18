@@ -8,7 +8,8 @@ import sys
 
 def make_tensor_data(list_filenames):
     """
-
+    Function to make three-way array data from csv data of phenotypic values.
+    :type list_filenames:list
     :param list_filenames:List of file names that composes of tensor data. All the files should be csv files with the size of N_E environments x N_G environments. The length of the list should be N_T
     :return: nd array object with the size of:N_E x N_G x N_T
     """

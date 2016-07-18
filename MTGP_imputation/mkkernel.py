@@ -5,62 +5,56 @@ import numpy as np
 from sktensor import dtensor as dt
 import MTGP as MG
 from scipy.spatial import distance as dist
-def product_kernel(x1,x2,par=None):
+def linear_kernel(x1,par=None):
     """
+    Function to make linear kernel of matrix.
     :param x1: nd array object with n1*p size
-    :param x2: nd array object with n2*p size
+
     :param par: Not important value.
-    :return:nd array object with size n1*n2
+    :rtype ndarray
+    :return:Linear kernel with size n1*n1
     """
-    prod=x1.dot(x2.T)
+    prod=x1.dot(x1.T)
     return(prod)
 
 def Gauss_kernel(x1,par):
-# def Gauss_kernel(x1,x2,par):
     """
 
     :param ndarray x1:n1*p size matrix
-    :param x2: nd array object with n2*p size
     :type par: float
     :param par: kernel band width
     :rtype: n1*n2 ndarray
-    :return:: Gauss kernel matrix
+    :return:: Gaussian kernel matrix
     """
 
     distmat=dist.squareform(dist.pdist(x1))
     kernmat=np.exp(-0.5*distmat/par)
     return(kernmat)
 
-# def median_RBF_kernel(x1,x2,par):
 def median_RBF_kernel(x1,par):
     """
+    Function to calculate RBF kernel standardized by median of squared norm between vectors in matrix.
     :param ndarray x1:n1*p size matrix
-    :param ndarray x2: n2*p size matrix.
     :type par: float
-    :param par: kernel band width
-    :rtype: n1*n2 ndarray
-    :return:: Gauss kernel matrix
+    :param par: kernel band width parameter.
+    :rtype: ndarray
+    :return:: Gaussian kernel matrix with the size of n1*n1
     """
 
-    n1=x1.shape[0]
-    # n2=x2.shape[0]
     distvec=dist.pdist(x1)
     distmat=dist.squareform(distvec)
-    # count=[]
-    # for i in  range(n1):
-    #     for j in range(i,n2):
-    #         x1i=x1[i,:].astype(np.float64)
-    #         x2j=x2[j,:].astype(np.float64)
-    #         distmat[i,j]=distmat[j,i]=np.nansum((x1i-x2j)**2)
-    #         if i!=j:
-    #             count.append(distmat[i,j])
-    # kernmat=np.exp(-par*distmat/np.nanmedian(count))
-    # kernmat=np.exp(-par*distmat/np.median(count))
     kernmat=np.exp(-par*distmat/np.median(distvec))
     return(kernmat)
 
 
 def ten_imputes(nduse_sc):
+    """
+    Function to impute missing data temporarily with mean of each environment, genotypes at each trait.
+    :type nduse_sc: three-way nd array with the size of:N_E x N_G x N_T
+    :param nduse_sc: Scaled missing phenotypic values.
+    :type ndarray
+    :return: Temporarily imputed phenotypic values with the size of N_E x N_G x N_T
+    """
     dim=nduse_sc.shape
     ten_imputed=np.zeros(dim)
     ten_imputed[np.logical_not(np.isnan(nduse_sc))]=nduse_sc[np.logical_not(np.isnan(nduse_sc))]
@@ -92,11 +86,16 @@ def ten_imputes(nduse_sc):
 def selfkern(nd, thetag_self, thetae_self, thetat_self, self_kern):
     """
     Function to impute missing tensor data with mean values. Missing data are temporary imputed by the deviancec of each genotype and,each environment .
+    :type nd: ndarray
     :param nd: Ne*Ng*Nt three-way nd-array data: Ne environments, Ng genotypes and Nt traits.
     :param self_kern: Kernel function for self-similarity matrix
-    :param thetag_self: Parameter of kernel function for kernel matrix of genotype.
+    :type thetag_self: float
+    :param thetag_self: Parameter of kernel function for kernel matrix of genotype (which corresponds to lambda in the paper).
+    :type thetae_self: float
     :param thetae_self: Parameter of kernel function for kernel matrix of environment.
+    :type thetat_self: float
     :param thetat_self: Parameter of kernel function for kernel matrix of traits.
+    :rtype: dict
     :return:Python dictionary object which contatins three self measuring similarity kernel of environment, genotype and trait.
     """
 

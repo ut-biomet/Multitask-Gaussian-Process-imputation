@@ -7,19 +7,42 @@ import os
 import mkkernel as mkk
 
 def prod(seq):
+    """
+    Function to calculate the product of numbers in list
+    :type seq: list or ndarray
+    :param seq: list object which contains numbers
+    :rtype float
+    :return The product of all the numbers in seq.
+    """
     prod=1
     for element in seq:
         prod=prod*element
     return(prod)
 
 def rev_kronecker_list(lis):
+    """
+    Function to calculate the kronecker product of matrixes in "lis" in reverse order.
+    :type lis: list
+    :param lis: List of 3 nd array matrixes. The size of matrix should be N_E*N_E, N_G*N_G and N_T*N_T.
+    :rtype: ndarray
+    :return: The kronecker product nd array matrix with the size of (N_T*N_G*N_E)*(N_T*N_G*N_E).
+    """
     len_list = len(lis)
     mat = lis[0]
-    for i in range(len(lis) - 1):
+    for i in range(len_list - 1):
         mat = np.kron(lis[i + 1], mat)
     return (mat)
 
 def scaling(nduse):
+    """
+    Function to standardize three-way array phenotypic values data as equation (1) does.
+    Phenotypic values of each trait are standardized so that they hace a mean of 0 and SD of 1 over G genotype and R environments for each trait.
+    Means, SDs of each trait and stasndardized three-way array data are returned.
+    :type nduse: ndarray
+    :param nduse: Three-way nd array object with the size of N_E environments, N_G genontypes and N_T traits.
+    :rtype: dict
+    :return: Python dictionary object which have two indexes; 'mean_sd' and 'dtensor'. 'mean_sd' contains means and SDs of each trai. 'dtensor' contsins standardized three-way array data.
+    """
     dim = list(nduse.shape)
     mean_sd = np.zeros((2, dim[2]))
     nduse_sc = np.tile(np.nan, dim)
@@ -35,6 +58,15 @@ def scaling(nduse):
     return (rdic)
 
 def compare(nd, nduse_meansd):
+    """
+    Function to calculate standardized data.
+    :type type: ndarray
+    :type nd: ndarray
+    :param nd: Original missing data
+    :param nduse_meansd:
+    :rtype: ndarray
+    :return: Standardized data
+    """
     dim = nd.shape
     compare = np.tile(np.nan, dim)
     for i in range(dim[2]):
@@ -42,9 +74,14 @@ def compare(nd, nduse_meansd):
     return (compare)
 
 
-def GPI_normal_true2(kerns, sig2, nduse_impute,miss_site):
+def GPI_normal(kerns, sig2, nduse_impute,miss_site):
     """
-    :type cov: object
+    Function to solve the equation (3) in the paper.
+    :param kerns: List object which contains 3 nd array matrixes. The size of matrix should be N_E*N_E, N_G*N_G and N_T*N_T.
+    :param sig2: Positive nd array value which corresponds to "sigma^2" (variance of error tertm) in the paper.
+    :param nduse_impute: Missing three-way nd array to be imputed with the size of N_E environments, N_G genontypes and N_T traits.
+    :param miss_site: nd array vector which indicates where vectorized phenotypic values are missing.
+    :return: nd array vector of predicted valued for missing phenotypic values.
     """
     dim = nduse_impute.shape
 
@@ -65,32 +102,41 @@ def GPI_normal_true2(kerns, sig2, nduse_impute,miss_site):
     return (solver)
 
 def reconstruct(ten, nduse_meansd):
+    """
+    Function to transforming back standardized phenotypic values
+    :type ten: ndarray
+    :param ten: Imputed standardized phenotypic values
+    :type nduse_meansd: ndarray
+    :param nduse_meansd: Means and SDs of original missing data
+    :rtype: ndarray
+    :return: Transformed back phenotypic values.
+    """
     dim = ten.shape
     ten_origin = np.tile(np.nan, dim)
     for i in range(dim[2]):
         ten_origin[:, :, i] = ten[:,:,i] * nduse_meansd[1, i] + nduse_meansd[0, i]
     return(ten_origin)
 
-def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
+def candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candidates):
+    """
+    Function to determine parameters via cross validation (CV) for imputation.
+    :param nd2: Standardized three-way nd array object with the size of N_E environments, N_G genontypes and N_T traits.
+    :param mode: str object which indicates the scenario of data missing. It should be 'unif' or 'fiber'
+    :param kern: Kernel function of self measuring similarity kernels.
+    :param kerngeno: Kernel function of kernels of genotype marker matrix.
+    :param genomat: nd array matrix of genotype marker data.
+    :param r2: Integer which indicates the number of cross validation. We set it 'three' in the paper.
+    :param parameter_candidates: python dictionary object which has indexes; 'gpara_candidates', 'mparag_candidates','pars_candidates','sig2_candidates'. Each index have list of values for cross validation.
+
+    :return: Parameters which minimize CV error.
     """
 
-    :param nd2: three mode tenosr array data
-    :param mode: str object which indicates the scenario of data missing.
-    :param kern:
-    :param kerngeno:
-    :param genomat:
-    :param r2:
-    :param parameter_kouho:
+    global candidates
 
-    :return: test error of CV
-    """
+    candidatespre = sorted(parameter_candidates.items())
+    bestuse = [candidatespre[i][1] for i in range(len(candidatespre))]
 
-    global kouho
-
-    kouhopre = sorted(parameter_kouho.items())
-    bestuse = [kouhopre[i][1] for i in range(len(kouhopre))]
-
-    gpara_kouho, mparag_kouho, pars_kouho, sig2_kouho = bestuse
+    gpara_candidates, mparag_candidates, pars_candidates, sig2_candidates = bestuse
     nd_l = copy.deepcopy(nd2)
     dim = nd_l.shape
     dim2 = list(copy.deepcopy(dim))
@@ -134,15 +180,9 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
             stock.append(x[group[i]])
 
     else:
-        print('None Sence!!')
+        print('None Sence!! "mode" should be "fiber", or "unif".')
 
-    for pars, gpara, mparag, sig2 in list(it.product(pars_kouho,gpara_kouho, mparag_kouho, sig2_kouho)):
-        # pars = pars_kouho[npars]
-        # gpara = gpara_kouho[ngpara]
-        # envpara = envpara_kouho[nepara]
-        # mparag = mparag_kouho[nmparag]
-        # mparae = mparae_kouho[nmparae]
-        # sig2=sig2_kouho[nsig2]
+    for pars, gpara, mparag, sig2 in list(it.product(pars_candidates,gpara_candidates, mparag_candidates, sig2_candidates)):
 
         scaled = np.tile([np.nan], (dim2))
         est = np.tile([np.nan], (dim2))
@@ -181,7 +221,7 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
             if genomat is not None:
                 gkern = kerngeno(genomat, gpara)
                 kerns[1] = mparag * (kerns[1]) + (1 - mparag) * gkern
-            solver = GPI_normal_true2(kerns, sig2, nduse_impute, miss_site)
+            solver = GPI_normal(kerns, sig2, nduse_impute, miss_site)
 
             origin[:, :, :, p] = nd2
             nd_compare = compare(nd2, nduse_meansd)
@@ -191,40 +231,39 @@ def kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho):
         mse = np.nanmean((scaled - comp) ** 2) ** 0.5
 
         if mse < mse_top:
-            kouho = [gpara, mparag, pars, sig2]
+            candidates = [gpara, mparag, pars, sig2]
             mse_top = copy.deepcopy(mse)
+    print('The least error is below.')
     print(mse_top)
 
-    return kouho
+    return candidates
 
 def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
-                                        parameter_kouho):
+                                        parameter_candidates):
     """
 
-    :type nd: nd array object
-    :param nd: N_E*N_G*N_T three-way nd-array data: N_E environments, N_G genotypes and N_T traits.
-    :param kern: Kernel function for self-similarity matrix
-    :param name: Name of result-folder :str
-    :param kerngeno: Kernel function for SNPs marker matrix
+    :param nd: N_E*N_G*N_T three-way nd-array phenotypic values data of N_E environments, N_G genotypes and N_T traits.
+    :param kern: Kernel function of self-similarity matrixes
+    :param kerngeno: Kernel function for SNPs marker matrix. If you do not have marker matrix, it should be None.
     :param genomat: SNPs marker matrix: N_G * Markers nd-array matrix
-    :param mode: How to make missing data for cross validation (CV). "uniform" or "fiber"
+    :param mode: str object which indicates the scenario of data missing. It should be 'unif' or 'fiber'.
     :param r2: Replication number of CV :int
-    :param parameter_kouho: python dictionary object which has indexes "    'gpara_kouho', 'mparag_kouho','pars_kouho','sig2_kouho'. Each index have list of values for cross validation.
+    :param parameter_candidates: Python dictionary object which has indexes; 'gpara_candidates', 'mparag_candidates','pars_candidates','sig2_candidates'. Each index have list of candidates ofr parameters for cross validation.
 
-    :return:
+    :return Python dictionary object which has three indexes; 'result', 'est' and 'Parameters'. 'result' contains competed three-way array data. 'est' contains estimated missing data. 'parameters' contains parameters used for imputation.
     """
 
     length = prod(nd.shape)
     dim = nd.shape
-    kouho = []
+    candidates = []
 
     result=copy.deepcopy(nd)
     nd2 = copy.deepcopy(nd)
 
-    best = kouho_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_kouho)
+    best = candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candidates)
     gpara, mparag, pars, sig2 = best
 
-    kouho.append(best)  ##parstを追加
+    candidates.append(best)
     vecten2 = nd2.reshape(length, order='F')
 
     miss_site = np.isnan(vecten2)
@@ -237,23 +276,23 @@ def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
     kerndic = mkk.selfkern(nduse_impute, pars, pars, pars, kern)
     kerns = [kerndic['env'],kerndic['geno'],kerndic['trait']]
 
-    if genomat is not None:  ##系統の付加情報
+    if genomat is not None:  ##If you do not have genotype marker data.
         gkern = kerngeno(genomat, gpara)
         if mparag > 0:
             kerns[1] = mparag * (kerns[1]) + (1 - mparag) * gkern
         else:
             kerns[1] = gkern
 
-    solver = GPI_normal_true2(kerns, sig2, nduse_impute, miss_site)
+    solver = GPI_normal(kerns, sig2, nduse_impute, miss_site)
 
     scaled = solver.reshape(dim, order='F')
     est = reconstruct(scaled, nduse_meansd)
     result[np.isnan(nd)]=est[np.isnan(nd)]
 
     rdic = {
-        'result': result,
-        'est': est,
-        'kouhos': kouho
+        'result': result,   #Competed three-way array data
+        'est': est,     #Estimated missing data
+        'Parameters': candidates #Parameters used for imputation
     }
 
     return (rdic)

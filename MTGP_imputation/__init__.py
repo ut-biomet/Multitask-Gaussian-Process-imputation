@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#2016/5/23 Packages for imputation of missing data with MTGP
+#2016/7/18 Packages for imputation of missing data with MTGP in 'Multi-task Gaussian process for imputing missing data in multi-trait and multi-environment trials'
 
 #This package is designed for python2. It does not work for python3.
 
