@@ -144,6 +144,9 @@ def candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candi
     length = prod(dim)
 
     mse_top = np.array(1000000.)
+    cv_lacked=nd2
+    cv_est=None
+
     if mode == 'uniform':
         nk = prod(dim)
         print("uniform")
@@ -188,6 +191,7 @@ def candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candi
         est = np.tile([np.nan], (dim2))
         origin = np.tile([np.nan], (dim2))
         comp = np.tile([np.nan], (dim2))
+        lacked=np.tile([np.nan], (dim2))
 
         for p in range(r2):
             print(p)
@@ -228,15 +232,19 @@ def candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candi
             comp[:, :, :, p] = nd_compare
             scaled[:, :, :, p] = solver.reshape(dim, order='F')
             est[:, :, :, p] = reconstruct(scaled[:, :, :, p], nduse_meansd)
+            lacked[:,:,:,p]=nduse
         mse = np.nanmean((scaled - comp) ** 2) ** 0.5
 
         if mse < mse_top:
             candidates = [gpara, mparag, pars, sig2]
             mse_top = copy.deepcopy(mse)
+            cv_est=est
+        cv_lacked=lacked
+
     print('The least error is below.')
     print(mse_top)
 
-    return candidates
+    return candidates+[cv_est,cv_lacked]
 
 def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
                                         parameter_candidates):
@@ -261,7 +269,7 @@ def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
     nd2 = copy.deepcopy(nd)
 
     best = candidates_searcher(nd2, mode, kern, kerngeno, genomat,  r2, parameter_candidates)
-    gpara, mparag, pars, sig2 = best
+    gpara, mparag, pars, sig2,cv_est,cv_lacked = best
 
     candidates.append(best)
     vecten2 = nd2.reshape(length, order='F')
@@ -292,7 +300,9 @@ def MTGP_impute(nd, kern,  kerngeno, genomat,mode, r2,
     rdic = {
         'result': result,   #Competed three-way array data
         'est': est,     #Estimated missing data
-        'Parameters': candidates #Parameters used for imputation
+        'Parameters': candidates, #Parameters used for imputation
+        'lacked_data_in_cv':cv_lacked,
+        'estimated_value_in_cv':cv_est
     }
 
     return (rdic)

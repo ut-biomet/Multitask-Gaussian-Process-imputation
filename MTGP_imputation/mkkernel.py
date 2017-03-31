@@ -46,6 +46,19 @@ def median_RBF_kernel(x1,par):
     kernmat=np.exp(-par*distmat/np.median(distvec))
     return(kernmat)
 
+def Gauss_kernel_from_distance(x1,par):
+    """
+
+    :param ndarray x1:  n1*n1 size matrix of square distance
+    :type par: float
+    :param par: kernel band width
+    :rtype: n1*n2 ndarray
+    :return:: Gaussian kernel matrix
+    """
+
+    distmat=x1
+    kernmat=np.exp(-0.5*distmat/par)
+    return(kernmat)
 
 def ten_imputes(nduse_sc):
     """
